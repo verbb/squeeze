@@ -2,7 +2,7 @@
     "name": "verbb/squeeze",
     "description": "Zip one or multiple craft assets on the fly for frontend user to download.",
     "type": "craft-plugin",
-    "version": "3.0.0",
+    "version": "4.0.0-alpha.1",
     "keywords": [
         "craft",
         "cms",
@@ -29,9 +29,9 @@
         }
     ],
     "require": {
-        "php": "^8.2",
-        "craftcms/cms": "^5.0.0",
-        "verbb/base": "^3.0.0"
+        "php": "^8.4",
+        "craftcms/cms": "6.x-dev",
+        "verbb/base": "dev-craft-6"
     },
     "autoload": {
         "psr-4": {
@@ -41,7 +41,9 @@
     "extra": {
         "name": "Squeeze",
         "handle": "squeeze",
-        "changelogUrl": "https://raw.githubusercontent.com/verbb/squeeze/craft-5/CHANGELOG.md",
+        "changelogUrl": "https://raw.githubusercontent.com/verbb/squeeze/craft-6/CHANGELOG.md",
         "class": "verbb\\squeeze\\Squeeze"
-    }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
 }
