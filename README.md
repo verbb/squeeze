@@ -1,4 +1,4 @@
-<p align="center"><img src="https://verbb.imgix.net/plugins/squeeze/squeeze-icon.svg" width="100" height="100" alt="Squeeze icon"></p>
+<p align="center"><img src="https://assets.verbb.io/plugins/squeeze/squeeze-icon.svg" width="100" height="100" alt="Squeeze icon"></p>
 <h1 align="center">Squeeze for Craft CMS</h1>
 
 Squeeze is a Craft CMS plugin to zip one or multiple craft assets on the fly for frontend user to download.
