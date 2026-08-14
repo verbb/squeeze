@@ -4,6 +4,8 @@
         "collapsable": false,
         "children": [
             "get-started/installation-setup",
+            "get-started/configuration",
+            "get-started/upgrading",
             "get-started/requirements"
         ]
     },

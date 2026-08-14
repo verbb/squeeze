@@ -1,0 +1,11 @@
+{% extends 'squeeze/_layouts' %}
+
+{% import '_includes/forms' as forms %}
+{% import 'verbb-base/_macros' as macros %}
+
+{% requireAdmin %}
+
+{% set crumbs = [
+    { label: 'Squeeze' | t('squeeze'), url: url('squeeze') },
+    { label: 'Settings' | t('app'), url: url('squeeze/settings') },
+] %}
