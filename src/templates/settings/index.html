@@ -3,45 +3,32 @@
 {% import '_includes/forms' as forms %}
 {% import 'verbb-base/_macros' as macros %}
 
-{% set crumbs = [
-    { label: 'Squeeze' | t('squeeze'), url: url('squeeze/settings') },
-    { label: 'Settings' | t('app'), url: url('squeeze/settings') }
-] %}
-
-{% set selectedTab = 'settings' %}
 {% set fullPageForm = true %}
+{% set selectedTab = 'general' %}
+{% set pageTitle = 'General Settings' | t('squeeze') %}
+{% set pageAction = 'plugins/save-plugin-settings' %}
+{% set pageUrl = 'squeeze/settings' %}
 
-{% block content %}
+{% block settingsContent %}
+    {{ forms.checkboxSelectField({
+        label: 'Allowed Volumes' | t('squeeze'),
+        instructions: 'Choose which volumes may be included in Squeeze downloads. Leave as all volumes to allow any volume, subject to token or permission checks.' | t('squeeze'),
+        id: 'allowedVolumes',
+        name: 'allowedVolumes',
+        options: volumeOptions,
+        values: settings.allowedVolumes,
+        showAllOption: volumeOptions | length ? true : false,
+        errors: settings.getErrors('allowedVolumes'),
+        warning: macros.configWarning('allowedVolumes', 'squeeze'),
+    }) }}
 
-<h2>{{ 'General Settings' | t('squeeze') }}</h2>
-
-<input type="hidden" name="action" value="plugins/save-plugin-settings">
-<input type="hidden" name="pluginHandle" value="squeeze">
-
-{% namespace 'settings' %}
-
-{{ forms.checkboxSelectField({
-    label: 'Allowed Volumes' | t('squeeze'),
-    instructions: 'Choose which volumes may be included in Squeeze downloads. Leave as all volumes to allow any volume, subject to token or permission checks.' | t('squeeze'),
-    id: 'allowedVolumes',
-    name: 'allowedVolumes',
-    options: volumeOptions,
-    values: settings.allowedVolumes,
-    showAllOption: volumeOptions | length ? true : false,
-    errors: settings.getErrors('allowedVolumes'),
-    warning: macros.configWarning('allowedVolumes', 'squeeze'),
-}) }}
-
-{{ forms.textField({
-    label: 'Default Token Duration' | t('squeeze'),
-    instructions: 'Default lifetime for signed download tokens, in seconds. Leave blank for tokens that never expire.' | t('squeeze'),
-    id: 'defaultTokenDuration',
-    name: 'defaultTokenDuration',
-    value: settings.defaultTokenDuration,
-    errors: settings.getErrors('defaultTokenDuration'),
-    warning: macros.configWarning('defaultTokenDuration', 'squeeze'),
-}) }}
-
-{% endnamespace %}
-
+    {{ forms.textField({
+        label: 'Default Token Duration' | t('squeeze'),
+        instructions: 'Default lifetime for signed download tokens, in seconds. Leave blank for tokens that never expire.' | t('squeeze'),
+        id: 'defaultTokenDuration',
+        name: 'defaultTokenDuration',
+        value: settings.defaultTokenDuration,
+        errors: settings.getErrors('defaultTokenDuration'),
+        warning: macros.configWarning('defaultTokenDuration', 'squeeze'),
+    }) }}
 {% endblock %}
