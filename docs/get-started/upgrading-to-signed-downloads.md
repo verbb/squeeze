@@ -1,10 +1,10 @@
-# Upgrading to signed downloads
+# Upgrading to Signed Downloads
 
 Squeeze now requires authorization for downloads. This is a **security** change: anonymous requests can no longer download assets by guessing or iterating asset IDs.
 
 While the [changelog](https://github.com/verbb/squeeze/blob/craft-5/CHANGELOG.md) lists every change, this guide covers what you need to update in your templates.
 
-## Who is affected?
+## Who Is Affected?
 
 You need to update frontend templates if guests download files via Squeeze using raw asset IDs — for example:
 
@@ -32,7 +32,7 @@ You do **not** need template changes if:
 - Only logged-in users download, and they already have view permission on each asset
 - You do not use Squeeze on the front end
 
-## What to change
+## What to Change
 
 Mint a signed token in Twig for the assets you intend to expose, then pass that token instead of relying on raw IDs alone.
 
@@ -78,7 +78,7 @@ For a direct link with a fixed set of files:
 
 See [Usage](https://verbb.io/craft-plugins/squeeze/docs/feature-tour/usage) for more examples, including authenticated downloads without a token.
 
-## Optional settings
+## Optional Settings
 
 After upgrading you can optionally restrict which volumes may be downloaded via **Settings → Plugins → Squeeze**, or in `config/squeeze.php`:
 

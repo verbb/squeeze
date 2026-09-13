@@ -1,8 +1,16 @@
 # Usage
 
-Downloads must be authorized. Anonymous users need a **signed token**. Logged-in users may pass raw asset IDs only when they can view each asset.
+Squeeze packages selected assets into a ZIP download. For example, a Resources entry might have an Assets field with the handle `downloads`. Fetch those files in the entry's Twig template before using any of the examples below:
 
-## Signed tokens (required for anonymous downloads)
+```twig
+{% set assets = entry.downloads.all() %}
+```
+
+Select at least one file on the entry and save it. The examples use `archive` as the download name; replace it with a name meaningful to your visitors.
+
+Downloads must be authorised. Anonymous users need a **signed token**. Logged-in users may pass raw asset IDs only when they can view each asset.
+
+## Signed Tokens (Required for Anonymous Downloads)
 
 Mint a token in Twig for the assets you intend to expose. Pass either Asset elements or asset IDs:
 
@@ -19,7 +27,7 @@ Mint a token in Twig for the assets you intend to expose. Pass either Asset elem
 </form>
 ```
 
-### Checkbox / subset selection
+### Checkbox / Subset Selection
 
 Mint a token for every asset shown on the page, then let the user choose a subset via `files[]`. Only IDs included in the token can be downloaded:
 
@@ -40,9 +48,11 @@ Mint a token for every asset shown on the page, then let the user choose a subse
 </form>
 ```
 
-Tokens are signed with Craft’s security key and expire after one hour by default (`defaultTokenDuration` in config).
+Open the link as a logged-out visitor and inspect the ZIP: it should contain the assets selected on the entry. For the checkbox form, select a subset and check that only those files are included.
 
-## Authenticated downloads
+Tokens are signed with Craft’s security key and expire after one hour by default (`defaultTokenDuration` in [Configuration](docs:get-started/configuration)). If a previously working link expires, reload the page to obtain a fresh token. When caching a page containing a token, ensure the cache lifetime does not outlast the token.
+
+## Authenticated Downloads
 
 Logged-in users with view permission on the assets may still post raw IDs:
 
@@ -60,7 +70,7 @@ Logged-in users with view permission on the assets may still post raw IDs:
 </form>
 ```
 
-## Access control
+## Access Control
 
 For each asset Squeeze will:
 
