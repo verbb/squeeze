@@ -3,6 +3,8 @@
 
 Squeeze is a Craft CMS plugin to zip one or multiple craft assets on the fly for frontend user to download.
 
+Anonymous downloads use signed, expiring URLs, while signed-in requests still respect Craft asset-view permissions and configured volume restrictions.
+
 ## Documentation
 Visit the [Squeeze Plugin page](https://verbb.io/craft-plugins/squeeze) for all documentation, guides, pricing and developer resources.
 
