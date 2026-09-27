@@ -5,11 +5,12 @@ use verbb\squeeze\Squeeze;
 use verbb\squeeze\models\Settings;
 
 use Craft;
-use craft\web\Controller;
 
 use yii\web\Response;
 
-class SettingsController extends Controller
+use verbb\base\controllers\SettingsController as BaseSettingsController;
+
+class SettingsController extends BaseSettingsController
 {
     // Public Methods
     // =========================================================================
