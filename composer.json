@@ -1,6 +1,6 @@
 {
     "name": "verbb/squeeze",
-    "description": "Zip one or multiple craft assets on the fly for frontend user to download.",
+    "description": "A Craft CMS plugin for packaging assets into secure, on-demand ZIP downloads.",
     "type": "craft-plugin",
     "version": "3.1.2",
     "keywords": [
