@@ -4,12 +4,11 @@ Pass selected Craft assets to Squeeze and generate an archive on demand. It work
 
 ## Features
 
-- **ZIP archives:** Package selected assets into a standard downloadable archive.
-- **One or many assets:** Use the same workflow for a single source file or a collection.
-- **On-demand creation:** Build the archive when it is requested instead of storing every combination.
-- **Signed downloads:** Protect archive routes with verifiable URL signatures.
-- **Expiring links:** Limit how long a generated download URL remains valid.
-- **Asset permissions:** Respect Craft asset-view permissions for signed-in download requests.
-- **Volume restrictions:** Limit downloadable assets to the volumes approved for the project.
-- **Twig integration:** Choose the files and present the download from project templates.
-- **Secure download links:** Generate signed URLs with an expiry so the archive route does not become a permanent public endpoint. Templates remain responsible for deciding which assets belong in the bundle and when a link should be offered.
+- Package selected assets into a standard downloadable archive.
+- Use the same workflow for a single source file or a collection.
+- Build the archive when it is requested instead of storing every combination.
+- Protect archive routes with verifiable URL signatures.
+- Limit how long a generated download URL remains valid.
+- Respect Craft asset-view permissions for signed-in download requests.
+- Limit downloadable assets to the volumes approved for the project.
+- Choose the files and present the download from project templates.
