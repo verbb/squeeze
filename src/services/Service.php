@@ -200,7 +200,7 @@ class Service extends Component
             return true;
         }
 
-        $user = $bindToUser ? Craft::$app->getUser()->getIdentity() : null;
+        $user = Craft::$app->getUser()->getIdentity();
 
         return $user && $asset->canView($user);
     }
@@ -220,7 +220,7 @@ class Service extends Component
             $duration = $settings->defaultTokenDuration;
         }
 
-        $user = Craft::$app->getUser()->getIdentity();
+        $user = $bindToUser ? Craft::$app->getUser()->getIdentity() : null;
 
         if ($bindToUser && !$user) {
             throw new InvalidArgumentException('A user-bound download token requires a signed-in user.');

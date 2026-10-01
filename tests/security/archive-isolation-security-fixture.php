@@ -23,6 +23,8 @@ namespace craft\elements {
             public string $filename,
             private string $contents,
             private bool $failOnRead = false,
+            private bool $visible = false,
+            private string $volumeHandle = 'allowed',
         ) {
         }
 
@@ -57,7 +59,7 @@ namespace craft\elements {
         {
             return (object)[
                 'id' => 1,
-                'handle' => 'allowed',
+                'handle' => $this->volumeHandle,
                 'uid' => 'synthetic-volume',
             ];
         }
@@ -82,7 +84,7 @@ namespace craft\elements {
 
         public function canView(mixed $user): bool
         {
-            return false;
+            return $this->visible && $user !== null;
         }
     }
 }
@@ -92,6 +94,7 @@ namespace {
     use verbb\squeeze\controllers\DownloadController;
     use verbb\squeeze\models\Settings;
     use verbb\squeeze\services\Service;
+    use yii\web\ForbiddenHttpException;
     use yii\web\HttpException;
     use yii\web\Response;
 
@@ -215,13 +218,17 @@ namespace {
         public function getUser(): object
         {
             return new class {
-                public function getIdentity(): mixed
+                public function getIdentity(): ?object
                 {
-                    return null;
+                    $userId = $GLOBALS['archiveUserId'] ?? null;
+
+                    return $userId === null ? null : (object)['id' => $userId];
                 }
             };
         }
     };
+
+    $GLOBALS['archiveUserId'] = null;
 
     $GLOBALS['archiveAssets'] = [
         new Asset(101, 'first.txt', 'first-request-marker'),
@@ -275,6 +282,33 @@ namespace {
         }
 
         check('A failed archive build leaves no partial temp directory behind', (glob($tempPath . '/squeeze-*', GLOB_ONLYDIR) ?: []) === $directoriesBeforeFailure);
+
+        $GLOBALS['archiveAssets'] = [new Asset(304, 'visible.txt', 'visible-marker', false, true)];
+
+        try {
+            (new Service())->archive('guest-raw', [304]);
+            throw new RuntimeException('Expected raw guest authorization to fail.');
+        } catch (ForbiddenHttpException) {
+            check('Raw asset IDs do not authorize an anonymous request', true);
+        }
+
+        $GLOBALS['archiveUserId'] = 77;
+        $authenticatedArchive = (new Service())->archive('authenticated', [304]);
+        check('A signed-in user can download an asset they may view', zipContents($authenticatedArchive) === [
+            'visible.txt' => 'visible-marker',
+        ]);
+        unlink($authenticatedArchive);
+        rmdir(dirname($authenticatedArchive));
+        $GLOBALS['archiveUserId'] = null;
+
+        $GLOBALS['archiveAssets'] = [new Asset(305, 'blocked.txt', 'blocked-marker', false, false, 'blocked')];
+
+        try {
+            (new Service())->archive('blocked-volume', [305], [305]);
+            throw new RuntimeException('Expected volume authorization to fail.');
+        } catch (ForbiddenHttpException) {
+            check('A valid asset token cannot bypass the allowed-volume boundary', true);
+        }
 
         $GLOBALS['archiveAssets'] = [
             new Asset(401, 'Report.pdf', 'first-report-marker'),
