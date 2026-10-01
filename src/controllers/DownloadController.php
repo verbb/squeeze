@@ -59,10 +59,47 @@ class DownloadController extends Controller
 
         $archive = Squeeze::$plugin->getService()->archive((string)$filename, $files, $tokenFileIds);
 
-        $response = Craft::$app->getResponse()->sendFile($archive, null, ['forceDownload' => true]);
+        try {
+            $response = Craft::$app->getResponse()->sendFile($archive, null, ['forceDownload' => true]);
+            register_shutdown_function(static function() use ($archive, $response): void {
+                self::_cleanupArchive($archive, $response);
+            });
+            $response->on(Response::EVENT_AFTER_SEND, static function() use ($archive, $response): void {
+                self::_cleanupArchive($archive, $response);
+            });
 
-        FileHelper::unlink($archive);
+            return $response;
+        } catch (\Throwable $e) {
+            self::_cleanupArchive($archive);
 
-        return $response;
+            throw $e;
+        }
+    }
+
+
+    // Private Methods
+    // =========================================================================
+
+    private static function _cleanupArchive(string $archive, ?Response $response = null): void
+    {
+        try {
+            if ($response !== null) {
+                $stream = is_array($response->stream) ? ($response->stream[0] ?? null) : $response->stream;
+
+                if (is_resource($stream)) {
+                    fclose($stream);
+                }
+
+                $response->stream = null;
+            }
+
+            if (is_file($archive)) {
+                FileHelper::unlink($archive);
+            }
+
+            FileHelper::removeDirectory(dirname($archive));
+        } catch (\Throwable $e) {
+            Craft::warning('Unable to remove a temporary Squeeze archive: ' . $e->getMessage(), __METHOD__);
+        }
     }
 }

@@ -9,10 +9,12 @@ use craft\base\Component;
 use craft\elements\Asset;
 use craft\helpers\FileHelper;
 use craft\helpers\Json;
+use craft\helpers\StringHelper;
 
 use yii\web\ForbiddenHttpException;
 
 use Exception;
+use Throwable;
 use ZipArchive;
 
 class Service extends Component
@@ -80,21 +82,48 @@ class Service extends Component
             throw new ForbiddenHttpException('No downloadable assets found.');
         }
 
-        $tempFile = Craft::$app->getPath()->getTempPath() . DIRECTORY_SEPARATOR . $filename . '_' . time() . '.zip';
+        $tempDirectory = Craft::$app->getPath()->getTempPath() . DIRECTORY_SEPARATOR . 'squeeze-' . StringHelper::UUID();
+        $tempFile = $tempDirectory . DIRECTORY_SEPARATOR . $filename . '_' . time() . '.zip';
 
         $zip = new ZipArchive();
+        $isOpen = false;
 
-        if ($zip->open($tempFile, ZipArchive::CREATE) === true) {
-            foreach ($authorizedAssets as $asset) {
-                $zip->addFromString($asset->filename, $asset->getContents());
+        try {
+            FileHelper::createDirectory($tempDirectory, 0700);
+
+            if ($zip->open($tempFile, ZipArchive::CREATE | ZipArchive::EXCL) !== true) {
+                throw new Exception(Craft::t('squeeze', 'Failed to generate the archive'));
             }
 
-            $zip->close();
+            $isOpen = true;
+
+            foreach ($authorizedAssets as $asset) {
+                if (!$zip->addFromString($asset->filename, $asset->getContents())) {
+                    throw new Exception(Craft::t('squeeze', 'Failed to generate the archive'));
+                }
+            }
+
+            $closed = $zip->close();
+            $isOpen = false;
+
+            if (!$closed) {
+                throw new Exception(Craft::t('squeeze', 'Failed to generate the archive'));
+            }
 
             return $tempFile;
-        }
+        } catch (Throwable $e) {
+            if ($isOpen) {
+                $zip->close();
+            }
 
-        throw new Exception(Craft::t('squeeze', 'Failed to generate the archive'));
+            if (is_file($tempFile)) {
+                FileHelper::unlink($tempFile);
+            }
+
+            FileHelper::removeDirectory($tempDirectory);
+
+            throw $e;
+        }
     }
 
     public function canDownloadAsset(Asset $asset, bool $tokenAuthorized = false): bool

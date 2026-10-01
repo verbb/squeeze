@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### Fixed
+- Fixed a low-severity information disclosure vulnerability affecting concurrent archive downloads.
 - Fixed a moderate-severity information disclosure vulnerability.
 
 ## 3.1.3 - 2026-09-30
