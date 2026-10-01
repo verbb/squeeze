@@ -17,6 +17,14 @@ use ZipArchive;
 
 class Service extends Component
 {
+    // Constants
+    // =========================================================================
+
+    private const TOKEN_CONTEXT = 'verbb/squeeze:download-token:v1';
+    private const TOKEN_PURPOSE = 'download';
+    private const TOKEN_VERSION = 1;
+
+
     // Public Methods
     // =========================================================================
 
@@ -124,15 +132,14 @@ class Service extends Component
         }
 
         $payload = [
+            'version' => self::TOKEN_VERSION,
+            'purpose' => self::TOKEN_PURPOSE,
             'files' => $files,
             'archivename' => $archiveName,
+            'expires' => $duration ? time() + $duration : null,
         ];
 
-        if ($duration) {
-            $payload['expires'] = time() + $duration;
-        }
-
-        return Craft::$app->getSecurity()->hashData(Json::encode($payload));
+        return Craft::$app->getSecurity()->hashData(Json::encode($payload), $this->_getTokenKey());
     }
 
     /**
@@ -140,7 +147,7 @@ class Service extends Component
      */
     public function validateToken(string $token): ?array
     {
-        $data = Craft::$app->getSecurity()->validateData($token);
+        $data = Craft::$app->getSecurity()->validateData($token, $this->_getTokenKey());
 
         if ($data === false) {
             return null;
@@ -148,23 +155,57 @@ class Service extends Component
 
         $payload = Json::decodeIfJson($data);
 
-        if (!is_array($payload) || empty($payload['files']) || !is_array($payload['files'])) {
+        if (!is_array($payload)
+            || ($payload['version'] ?? null) !== self::TOKEN_VERSION
+            || ($payload['purpose'] ?? null) !== self::TOKEN_PURPOSE
+            || !isset($payload['files'])
+            || !is_array($payload['files'])
+            || !array_is_list($payload['files'])
+            || $payload['files'] === []
+            || !isset($payload['archivename'])
+            || !is_string($payload['archivename'])
+            || !array_key_exists('expires', $payload)
+            || ($payload['expires'] !== null && !is_int($payload['expires']))) {
             return null;
         }
 
-        if (isset($payload['expires']) && (int)$payload['expires'] < time()) {
+        foreach ($payload['files'] as $fileId) {
+            if (!is_int($fileId) || $fileId <= 0) {
+                return null;
+            }
+        }
+
+        if (count(array_unique($payload['files'])) !== count($payload['files'])) {
+            return null;
+        }
+
+        $archiveName = FileHelper::sanitizeFilename($payload['archivename']) ?: 'archive';
+
+        if ($archiveName !== $payload['archivename']) {
+            return null;
+        }
+
+        if ($payload['expires'] !== null && $payload['expires'] < time()) {
             return null;
         }
 
         return [
-            'files' => array_values(array_map('intval', $payload['files'])),
-            'archivename' => FileHelper::sanitizeFilename((string)($payload['archivename'] ?? 'archive')) ?: 'archive',
+            'files' => $payload['files'],
+            'archivename' => $archiveName,
         ];
     }
 
 
     // Private Methods
     // =========================================================================
+
+    private function _getTokenKey(): string
+    {
+        $security = Craft::$app->getSecurity();
+        $securityKey = Craft::$app->getConfig()->getGeneral()->securityKey;
+
+        return $security->hkdf('sha256', $securityKey, null, self::TOKEN_CONTEXT, 32);
+    }
 
     private function isVolumeAllowed(Asset $asset, Settings $settings): bool
     {
