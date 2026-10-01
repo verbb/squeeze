@@ -50,7 +50,19 @@ Mint a token for every asset shown on the page, then let the user choose a subse
 
 Open the link as a logged-out visitor and inspect the ZIP: it should contain the assets selected on the entry. For the checkbox form, select a subset and check that only those files are included.
 
-Tokens are signed with Craft’s security key and expire after one hour by default (`defaultTokenDuration` in [Configuration](docs:get-started/configuration)). If a previously working link expires, reload the page to obtain a fresh token. When caching a page containing a token, ensure the cache lifetime does not outlast the token.
+Tokens are signed with a Squeeze-specific key derived from Craft’s security key and expire after one hour by default (`defaultTokenDuration` in [Configuration](docs:get-started/configuration)). If a previously working link expires, reload the page to obtain a fresh token. When caching a page containing a token, ensure the cache lifetime does not outlast the token.
+
+### Shareable and User-Bound Links
+
+Signed links are bearer links by default: anyone who receives the URL can download its exact asset set until the token expires. Keep lifetimes short and avoid logging or publishing tokenized URLs.
+
+For a member-only link, pass `true` as the fourth argument. The user must be signed in both when the token is created and when it is used:
+
+```twig
+<a href="{{ craft.squeeze.getDownloadUrl(assets, 'member-files', null, true) }}">Download</a>
+```
+
+User binding prevents a copied link from working in another account. It does not replace careful asset selection when the token is created.
 
 ## Authenticated Downloads
 

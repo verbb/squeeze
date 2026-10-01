@@ -15,6 +15,7 @@ use yii\web\ForbiddenHttpException;
 use yii\web\HttpException;
 
 use Exception;
+use InvalidArgumentException;
 use Throwable;
 use ZipArchive;
 
@@ -199,7 +200,7 @@ class Service extends Component
             return true;
         }
 
-        $user = Craft::$app->getUser()->getIdentity();
+        $user = $bindToUser ? Craft::$app->getUser()->getIdentity() : null;
 
         return $user && $asset->canView($user);
     }
@@ -207,7 +208,7 @@ class Service extends Component
     /**
      * @param int[]|Asset[] $files Asset IDs or Asset elements.
      */
-    public function createToken(array $files, string $archiveName = 'archive', ?int $duration = null): string
+    public function createToken(array $files, string $archiveName = 'archive', ?int $duration = null, bool $bindToUser = false): string
     {
         /* @var Settings $settings */
         $settings = Squeeze::$plugin->getSettings();
@@ -219,12 +220,19 @@ class Service extends Component
             $duration = $settings->defaultTokenDuration;
         }
 
+        $user = Craft::$app->getUser()->getIdentity();
+
+        if ($bindToUser && !$user) {
+            throw new InvalidArgumentException('A user-bound download token requires a signed-in user.');
+        }
+
         $payload = [
             'version' => self::TOKEN_VERSION,
             'purpose' => self::TOKEN_PURPOSE,
             'files' => $files,
             'archivename' => $archiveName,
             'expires' => $duration ? time() + $duration : null,
+            'userId' => $bindToUser ? (int)$user->id : null,
         ];
 
         return Craft::$app->getSecurity()->hashData(Json::encode($payload), $this->_getTokenKey());
@@ -253,7 +261,9 @@ class Service extends Component
             || !isset($payload['archivename'])
             || !is_string($payload['archivename'])
             || !array_key_exists('expires', $payload)
-            || ($payload['expires'] !== null && !is_int($payload['expires']))) {
+            || ($payload['expires'] !== null && !is_int($payload['expires']))
+            || !array_key_exists('userId', $payload)
+            || ($payload['userId'] !== null && (!is_int($payload['userId']) || $payload['userId'] <= 0))) {
             return null;
         }
 
@@ -275,6 +285,14 @@ class Service extends Component
 
         if ($payload['expires'] !== null && $payload['expires'] < time()) {
             return null;
+        }
+
+        if ($payload['userId'] !== null) {
+            $user = Craft::$app->getUser()->getIdentity();
+
+            if (!$user || (int)$user->id !== $payload['userId']) {
+                return null;
+            }
         }
 
         return [

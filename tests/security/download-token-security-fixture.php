@@ -82,7 +82,21 @@ namespace {
         {
             return $this->security;
         }
+
+        public function getUser(): object
+        {
+            return new class {
+                public function getIdentity(): ?object
+                {
+                    $userId = $GLOBALS['tokenUserId'] ?? null;
+
+                    return $userId === null ? null : (object)['id' => $userId];
+                }
+            };
+        }
     };
+
+    $GLOBALS['tokenUserId'] = null;
 
     $service = new Service();
     $token = $service->createToken([7, 11], 'annual-reports');
@@ -108,6 +122,7 @@ namespace {
         'files' => [7, 11],
         'archivename' => 'annual-reports',
         'expires' => time() + 300,
+        'userId' => null,
     ];
     $generalKeyToken = $security->hashData(Json::encode($validClaims), $securityKey);
 
@@ -125,6 +140,12 @@ namespace {
 
     check('A token with non-canonical asset IDs is rejected', $service->validateToken($invalidResourcesToken) === null);
 
+    $invalidUserBinding = $validClaims;
+    $invalidUserBinding['userId'] = '42';
+    $invalidUserBindingToken = $security->hashData(Json::encode($invalidUserBinding), $tokenKey);
+
+    check('A token with a non-canonical user binding is rejected', $service->validateToken($invalidUserBindingToken) === null);
+
     $expired = $validClaims;
     $expired['expires'] = time() - 1;
     $expiredToken = $security->hashData(Json::encode($expired), $tokenKey);
@@ -132,11 +153,33 @@ namespace {
     check('An expired token is rejected', $service->validateToken($expiredToken) === null);
     check('An altered token is rejected', $service->validateToken($token . 'x') === null);
 
+    $GLOBALS['tokenUserId'] = 42;
+    $boundToken = $service->createToken([7], 'member-files', null, true);
+
+    check('A user-bound token works for the user it was minted for', $service->validateToken($boundToken) === [
+        'files' => [7],
+        'archivename' => 'member-files',
+    ]);
+
+    $GLOBALS['tokenUserId'] = 99;
+    check('A user-bound token is rejected for a different user', $service->validateToken($boundToken) === null);
+
+    $GLOBALS['tokenUserId'] = null;
+    check('A user-bound token is rejected for an anonymous request', $service->validateToken($boundToken) === null);
+
+    try {
+        $service->createToken([7], 'member-files', null, true);
+        throw new RuntimeException('Expected anonymous user binding to fail.');
+    } catch (InvalidArgumentException) {
+        check('A user-bound token cannot be minted while logged out', true);
+    }
+
     $settings->defaultTokenDuration = null;
     $permanentToken = $service->createToken([23], 'permanent');
     $permanentClaims = Json::decode($security->validateData($permanentToken, $tokenKey));
 
     check('Configured permanent links retain an explicit null expiry', $permanentClaims['expires'] === null);
+    check('Shareable links carry an explicit null user binding', $permanentClaims['userId'] === null);
     check('A configured permanent link remains valid', $service->validateToken($permanentToken) === [
         'files' => [23],
         'archivename' => 'permanent',

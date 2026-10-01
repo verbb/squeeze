@@ -16,9 +16,9 @@ class SqueezeVariable
      *
      * @param int[]|Asset[] $files
      */
-    public function createToken(array $files, string $archiveName = 'archive', ?int $duration = null): string
+    public function createToken(array $files, string $archiveName = 'archive', ?int $duration = null, bool $bindToUser = false): string
     {
-        return Squeeze::$plugin->getService()->createToken($files, $archiveName, $duration);
+        return Squeeze::$plugin->getService()->createToken($files, $archiveName, $duration, $bindToUser);
     }
 
     /**
@@ -26,9 +26,9 @@ class SqueezeVariable
      *
      * @param int[]|Asset[] $files
      */
-    public function getDownloadUrl(array $files, string $archiveName = 'archive', ?int $duration = null): string
+    public function getDownloadUrl(array $files, string $archiveName = 'archive', ?int $duration = null, bool $bindToUser = false): string
     {
-        $token = $this->createToken($files, $archiveName, $duration);
+        $token = $this->createToken($files, $archiveName, $duration, $bindToUser);
 
         return UrlHelper::actionUrl('squeeze/download', [
             'downloadToken' => $token,

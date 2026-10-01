@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### Added
+- Added optional signed-in user binding for generated download tokens.
 - Added configurable file-count and uncompressed-size limits for generated archives.
 
 ### Changed
