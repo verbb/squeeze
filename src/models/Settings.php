@@ -21,14 +21,26 @@ class Settings extends Model
      */
     public ?int $defaultTokenDuration = 3600;
 
+    /**
+     * Maximum number of assets in one archive. Null disables the limit.
+     */
+    public ?int $maxFiles = 100;
+
+    /**
+     * Maximum uncompressed archive size, in bytes. Null disables the limit.
+     */
+    public ?int $maxArchiveSize = 1073741824;
+
 
     // Public Methods
     // =========================================================================
 
     public function setAttributes($values, $safeOnly = true): void
     {
-        if (array_key_exists('defaultTokenDuration', $values) && $values['defaultTokenDuration'] === '') {
-            $values['defaultTokenDuration'] = null;
+        foreach (['defaultTokenDuration', 'maxFiles', 'maxArchiveSize'] as $attribute) {
+            if (array_key_exists($attribute, $values) && $values[$attribute] === '') {
+                $values[$attribute] = null;
+            }
         }
 
         parent::setAttributes($values, $safeOnly);
@@ -41,7 +53,7 @@ class Settings extends Model
     protected function defineRules(): array
     {
         $rules = parent::defineRules();
-        $rules[] = [['defaultTokenDuration'], 'number', 'integerOnly' => true, 'min' => 1, 'skipOnEmpty' => true];
+        $rules[] = [['defaultTokenDuration', 'maxFiles', 'maxArchiveSize'], 'number', 'integerOnly' => true, 'min' => 1, 'skipOnEmpty' => true];
 
         return $rules;
     }

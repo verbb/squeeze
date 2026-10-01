@@ -12,6 +12,7 @@ use craft\helpers\Json;
 use craft\helpers\StringHelper;
 
 use yii\web\ForbiddenHttpException;
+use yii\web\HttpException;
 
 use Exception;
 use Throwable;
@@ -82,6 +83,13 @@ class Service extends Component
             throw new ForbiddenHttpException('No downloadable assets found.');
         }
 
+        /* @var Settings $settings */
+        $settings = Squeeze::$plugin->getSettings();
+
+        if ($settings->maxFiles !== null && count($authorizedAssets) > $settings->maxFiles) {
+            throw new HttpException(413, 'The requested archive contains too many files.');
+        }
+
         $tempDirectory = Craft::$app->getPath()->getTempPath() . DIRECTORY_SEPARATOR . 'squeeze-' . StringHelper::UUID();
         $tempFile = $tempDirectory . DIRECTORY_SEPARATOR . $filename . '_' . time() . '.zip';
 
@@ -97,11 +105,53 @@ class Service extends Component
 
             $isOpen = true;
             $usedEntryNames = [];
+            $assetCopies = [];
+            $totalSize = 0;
 
             foreach ($authorizedAssets as $asset) {
                 $entryName = $this->_uniqueArchiveEntryName($asset->filename, $usedEntryNames);
+                $assetCopy = $tempDirectory . DIRECTORY_SEPARATOR . StringHelper::UUID();
+                $assetCopies[] = $assetCopy;
+                $source = $asset->getStream();
 
-                if (!$zip->addFromString($entryName, $asset->getContents())) {
+                if (!is_resource($source)) {
+                    throw new Exception(Craft::t('squeeze', 'Failed to generate the archive'));
+                }
+
+                $destination = null;
+
+                try {
+                    $destination = fopen($assetCopy, 'xb');
+
+                    if ($destination === false) {
+                        throw new Exception(Craft::t('squeeze', 'Failed to generate the archive'));
+                    }
+
+                    $remainingBytes = $settings->maxArchiveSize === null
+                        ? null
+                        : $settings->maxArchiveSize - $totalSize + 1;
+                    $copiedBytes = $remainingBytes === null
+                        ? stream_copy_to_stream($source, $destination)
+                        : stream_copy_to_stream($source, $destination, $remainingBytes);
+                } finally {
+                    fclose($source);
+
+                    if (is_resource($destination)) {
+                        fclose($destination);
+                    }
+                }
+
+                if ($copiedBytes === false) {
+                    throw new Exception(Craft::t('squeeze', 'Failed to generate the archive'));
+                }
+
+                $totalSize += $copiedBytes;
+
+                if ($settings->maxArchiveSize !== null && $totalSize > $settings->maxArchiveSize) {
+                    throw new HttpException(413, 'The requested archive is too large.');
+                }
+
+                if (!$zip->addFile($assetCopy, $entryName)) {
                     throw new Exception(Craft::t('squeeze', 'Failed to generate the archive'));
                 }
             }
@@ -111,6 +161,12 @@ class Service extends Component
 
             if (!$closed) {
                 throw new Exception(Craft::t('squeeze', 'Failed to generate the archive'));
+            }
+
+            foreach ($assetCopies as $assetCopy) {
+                if (is_file($assetCopy)) {
+                    FileHelper::unlink($assetCopy);
+                }
             }
 
             return $tempFile;

@@ -6,4 +6,10 @@ return [
 
     // Default signed token lifetime in seconds. Set to null for non-expiring tokens.
     'defaultTokenDuration' => 3600,
+
+    // Maximum number of assets in one archive. Set to null to disable the limit.
+    'maxFiles' => 100,
+
+    // Maximum uncompressed archive size, in bytes. Set to null to disable the limit.
+    'maxArchiveSize' => 1073741824,
 ];

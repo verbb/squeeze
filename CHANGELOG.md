@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Added
+- Added configurable file-count and uncompressed-size limits for generated archives.
+
+### Changed
+- Reduced memory usage by streaming assets through disk-backed temporary files while building archives.
+
 ### Fixed
 - Fixed duplicate asset filenames overwriting earlier files in generated archives.
 - Fixed invalid archive-name values being coerced into unintended filenames.

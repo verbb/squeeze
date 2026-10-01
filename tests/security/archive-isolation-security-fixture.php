@@ -62,13 +62,22 @@ namespace craft\elements {
             ];
         }
 
-        public function getContents(): string
+        public function getStream()
         {
             if ($this->failOnRead) {
                 throw new RuntimeException('Synthetic asset read failure.');
             }
 
-            return $this->contents;
+            $stream = fopen('php://temp', 'w+b');
+            fwrite($stream, $this->contents);
+            rewind($stream);
+
+            return $stream;
+        }
+
+        public function getContents(): string
+        {
+            throw new RuntimeException('Archive generation must not load whole assets into memory.');
         }
 
         public function canView(mixed $user): bool
@@ -83,6 +92,7 @@ namespace {
     use verbb\squeeze\controllers\DownloadController;
     use verbb\squeeze\models\Settings;
     use verbb\squeeze\services\Service;
+    use yii\web\HttpException;
     use yii\web\Response;
 
     $vendorPath = getenv('VERBB_SQUEEZE_TEST_VENDOR');
@@ -141,6 +151,14 @@ namespace {
 
     $settings = new Settings();
     $settings->allowedVolumes = ['allowed'];
+    check('Archive resource limits have protective defaults', $settings->maxFiles === 100 && $settings->maxArchiveSize === 1073741824);
+
+    $unlimitedSettings = new Settings();
+    $unlimitedSettings->setAttributes([
+        'maxFiles' => '',
+        'maxArchiveSize' => '',
+    ]);
+    check('Blank archive limits normalize to explicit null values', $unlimitedSettings->maxFiles === null && $unlimitedSettings->maxArchiveSize === null);
 
     \verbb\squeeze\Squeeze::$plugin = new class($settings) {
         public function __construct(private Settings $settings)
@@ -268,9 +286,41 @@ namespace {
             'Report.pdf' => 'first-report-marker',
             'report (2).pdf' => 'second-report-marker',
         ]);
+        check('Successful builds remove disk-backed asset copies before responding', count(glob(dirname($duplicateArchive) . '/*') ?: []) === 1);
 
         unlink($duplicateArchive);
         rmdir(dirname($duplicateArchive));
+
+        $GLOBALS['archiveAssets'] = [
+            new Asset(501, 'one.txt', 'one'),
+            new Asset(502, 'two.txt', 'two'),
+        ];
+        $settings->maxFiles = 1;
+        $directoriesBeforeLimit = glob($tempPath . '/squeeze-*', GLOB_ONLYDIR) ?: [];
+
+        try {
+            (new Service())->archive('too-many', [501, 502], [501, 502]);
+            throw new RuntimeException('Expected the file-count limit.');
+        } catch (HttpException $e) {
+            check('The configured file-count limit rejects oversized requests', $e->statusCode === 413);
+        }
+
+        check('A file-count rejection leaves no partial temp directory behind', (glob($tempPath . '/squeeze-*', GLOB_ONLYDIR) ?: []) === $directoriesBeforeLimit);
+
+        $settings->maxFiles = 100;
+        $settings->maxArchiveSize = 5;
+        $GLOBALS['archiveAssets'] = [new Asset(503, 'large.txt', '123456')];
+
+        try {
+            (new Service())->archive('too-large', [503], [503]);
+            throw new RuntimeException('Expected the archive-size limit.');
+        } catch (HttpException $e) {
+            check('The configured uncompressed-size limit stops an oversized asset', $e->statusCode === 413);
+        }
+
+        check('A size-limit rejection leaves no partial temp directory behind', (glob($tempPath . '/squeeze-*', GLOB_ONLYDIR) ?: []) === $directoriesBeforeLimit);
+
+        $settings->maxArchiveSize = 1073741824;
 
         $responseFailureDirectory = $tempPath . '/squeeze-response-failure';
         mkdir($responseFailureDirectory, 0700);

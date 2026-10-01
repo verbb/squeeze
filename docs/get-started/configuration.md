@@ -30,6 +30,22 @@ The volumes permitted for downloads, identified by UID, handle or ID. An asteris
 The lifetime of signed download tokens in seconds. The default is one hour. Set it to `null` only when the download link should have no expiry.
 :::
 
+::: reference
+### `maxFiles`
+
+**Type:** `int|null` · **Default:** `100`
+
+The maximum number of assets Squeeze will include in one archive. Set it to `null` to allow any number of assets.
+:::
+
+::: reference
+### `maxArchiveSize`
+
+**Type:** `int|null` · **Default:** `1073741824`
+
+The maximum combined uncompressed size of the assets in one archive, in bytes. The default is 1 GiB. Set it to `null` to disable the size limit.
+:::
+
 ## Control Panel
 
 You can also manage these settings from **Settings → Plugins → Squeeze**. Anonymous downloads require a signed token; allowing a volume does not give anonymous visitors access through raw asset IDs.

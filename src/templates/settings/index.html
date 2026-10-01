@@ -31,4 +31,28 @@
         errors: settings.getErrors('defaultTokenDuration'),
         warning: macros.configWarning('defaultTokenDuration', 'squeeze'),
     }) }}
+
+    {{ forms.textField({
+        label: 'Maximum Files Per Archive' | t('squeeze'),
+        instructions: 'Maximum number of assets in one archive. Leave blank to disable this limit.' | t('squeeze'),
+        id: 'maxFiles',
+        name: 'maxFiles',
+        type: 'number',
+        min: 1,
+        value: settings.maxFiles,
+        errors: settings.getErrors('maxFiles'),
+        warning: macros.configWarning('maxFiles', 'squeeze'),
+    }) }}
+
+    {{ forms.textField({
+        label: 'Maximum Archive Size' | t('squeeze'),
+        instructions: 'Maximum uncompressed size of all assets in one archive, in bytes. Leave blank to disable this limit.' | t('squeeze'),
+        id: 'maxArchiveSize',
+        name: 'maxArchiveSize',
+        type: 'number',
+        min: 1,
+        value: settings.maxArchiveSize,
+        errors: settings.getErrors('maxArchiveSize'),
+        warning: macros.configWarning('maxArchiveSize', 'squeeze'),
+    }) }}
 {% endblock %}
