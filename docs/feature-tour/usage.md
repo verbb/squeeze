@@ -54,7 +54,7 @@ Tokens are signed with a Squeeze-specific key derived from Craft’s security ke
 
 ### Shareable and User-Bound Links
 
-Signed links are bearer links by default: anyone who receives the URL can download its exact asset set until the token expires. Keep lifetimes short and avoid logging or publishing tokenized URLs.
+Signed links are bearer links by default: anyone who receives the URL can download its exact asset set until the token expires. Keep lifetimes short and avoid logging or publishing tokenised URLs.
 
 For a member-only link, pass `true` as the fourth argument. The user must be signed in both when the token is created and when it is used:
 
@@ -81,6 +81,12 @@ Logged-in users with view permission on the assets may still post raw IDs:
     <input type="submit" value="Download!">
 </form>
 ```
+
+## Archive Contents
+
+Squeeze uses each asset's filename inside the ZIP. When two selected assets have the same filename, including names that differ only by letter case, Squeeze keeps both by adding a number to the later file. For example, two assets named `Report.pdf` and `report.pdf` become `Report.pdf` and `report (2).pdf`.
+
+Archive creation is atomic. If Squeeze can't read one of the selected assets, it stops the download and removes the partial archive instead of returning an incomplete ZIP. The `maxFiles` and `maxArchiveSize` settings described in [Configuration](docs:get-started/configuration) protect the server from unexpectedly large requests.
 
 ## Access Control
 

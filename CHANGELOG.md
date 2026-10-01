@@ -33,7 +33,7 @@
 
 ## 3.1.0 - 2026-08-14
 
-> {warning} Anonymous downloads that pass raw asset IDs (`files[]`) will stop working until you mint a signed token in Twig. Update frontend templates before upgrading — see [Upgrading to signed downloads](https://verbb.io/craft-plugins/squeeze/docs/get-started/upgrading).
+> {warning} Anonymous downloads that pass raw asset IDs (`files[]`) will stop working until you mint a signed token in Twig. Update frontend templates before upgrading — see [Upgrading to signed downloads](https://verbb.io/craft-plugins/squeeze/docs/v3/get-started/upgrading-to-signed-downloads).
 
 ### Added
 - Added access control for downloads: anonymous requests require a signed token; raw asset IDs are only allowed for logged-in users who can view each asset.
@@ -51,7 +51,7 @@
 
 ## 2.1.0 - 2026-08-14
 
-> {warning} Anonymous downloads that pass raw asset IDs (`files[]`) will stop working until you mint a signed token in Twig. Update frontend templates before upgrading — see [Upgrading to signed downloads](https://verbb.io/craft-plugins/squeeze/docs/get-started/upgrading).
+> {warning} Anonymous downloads that pass raw asset IDs (`files[]`) will stop working until you mint a signed token in Twig. Update frontend templates before upgrading — see [Upgrading to signed downloads](https://verbb.io/craft-plugins/squeeze/docs/v2/get-started/upgrading).
 
 ### Added
 - Added access control for downloads: anonymous requests require a signed token; raw asset IDs are only allowed for logged-in users who can view each asset.

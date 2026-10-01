@@ -12,5 +12,5 @@ Pass selected Craft assets to Squeeze and generate an archive on demand. It work
 <!-- feature-section -->
 ## Secure download links
 
-Generate signed URLs with an expiry so the archive route does not become a permanent public endpoint. Templates remain responsible for deciding which assets belong in the bundle and when a link should be offered.
+Generate signed URLs with an expiry so the archive route does not become a permanent public endpoint. Keep a link shareable or bind it to the signed-in member who requested it, while templates remain responsible for deciding which assets belong in the bundle and when a link should be offered.
 <!-- feature-section-end -->

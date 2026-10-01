@@ -76,7 +76,7 @@ For a direct link with a fixed set of files:
 <a href="{{ craft.squeeze.getDownloadUrl(assets, 'archive') }}">Download</a>
 ```
 
-See [Usage](https://verbb.io/craft-plugins/squeeze/docs/feature-tour/usage) for more examples, including authenticated downloads without a token.
+See [Usage](https://verbb.io/craft-plugins/squeeze/docs/v3/feature-tour/usage) for more examples, including authenticated downloads without a token.
 
 ## Optional Settings
 
