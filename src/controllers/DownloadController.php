@@ -57,7 +57,11 @@ class DownloadController extends Controller
             }
         }
 
-        $archive = Squeeze::$plugin->getService()->archive((string)$filename, $files, $tokenFileIds);
+        if (!is_string($filename)) {
+            throw new BadRequestHttpException('Archive name must be a string.');
+        }
+
+        $archive = Squeeze::$plugin->getService()->archive($filename, $files, $tokenFileIds);
 
         try {
             $response = Craft::$app->getResponse()->sendFile($archive, null, ['forceDownload' => true]);

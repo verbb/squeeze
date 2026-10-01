@@ -3,6 +3,8 @@
 ## Unreleased
 
 ### Fixed
+- Fixed duplicate asset filenames overwriting earlier files in generated archives.
+- Fixed invalid archive-name values being coerced into unintended filenames.
 - Fixed a low-severity information disclosure vulnerability affecting concurrent archive downloads.
 - Fixed a moderate-severity information disclosure vulnerability.
 

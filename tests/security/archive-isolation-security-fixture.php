@@ -258,6 +258,20 @@ namespace {
 
         check('A failed archive build leaves no partial temp directory behind', (glob($tempPath . '/squeeze-*', GLOB_ONLYDIR) ?: []) === $directoriesBeforeFailure);
 
+        $GLOBALS['archiveAssets'] = [
+            new Asset(401, 'Report.pdf', 'first-report-marker'),
+            new Asset(402, 'report.pdf', 'second-report-marker'),
+        ];
+        $duplicateArchive = (new Service())->archive('duplicates', [401, 402], [401, 402]);
+
+        check('Same-named assets remain distinct archive entries', zipContents($duplicateArchive) === [
+            'Report.pdf' => 'first-report-marker',
+            'report (2).pdf' => 'second-report-marker',
+        ]);
+
+        unlink($duplicateArchive);
+        rmdir(dirname($duplicateArchive));
+
         $responseFailureDirectory = $tempPath . '/squeeze-response-failure';
         mkdir($responseFailureDirectory, 0700);
         $responseFailureArchive = $responseFailureDirectory . '/shared-name_1700000000.zip';

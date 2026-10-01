@@ -96,9 +96,12 @@ class Service extends Component
             }
 
             $isOpen = true;
+            $usedEntryNames = [];
 
             foreach ($authorizedAssets as $asset) {
-                if (!$zip->addFromString($asset->filename, $asset->getContents())) {
+                $entryName = $this->_uniqueArchiveEntryName($asset->filename, $usedEntryNames);
+
+                if (!$zip->addFromString($entryName, $asset->getContents())) {
                     throw new Exception(Craft::t('squeeze', 'Failed to generate the archive'));
                 }
             }
@@ -234,6 +237,28 @@ class Service extends Component
         $securityKey = Craft::$app->getConfig()->getGeneral()->securityKey;
 
         return $security->hkdf('sha256', $securityKey, null, self::TOKEN_CONTEXT, 32);
+    }
+
+    /**
+     * @param array<string, true> $usedNames
+     */
+    private function _uniqueArchiveEntryName(string $filename, array &$usedNames): string
+    {
+        $candidate = $filename;
+        $counter = 2;
+        $extension = pathinfo($filename, PATHINFO_EXTENSION);
+        $basename = pathinfo($filename, PATHINFO_FILENAME);
+
+        while (isset($usedNames[StringHelper::toLowerCase($candidate)])) {
+            $candidate = $extension === ''
+                ? sprintf('%s (%d)', $filename, $counter)
+                : sprintf('%s (%d).%s', $basename, $counter, $extension);
+            $counter++;
+        }
+
+        $usedNames[StringHelper::toLowerCase($candidate)] = true;
+
+        return $candidate;
     }
 
     private function isVolumeAllowed(Asset $asset, Settings $settings): bool
