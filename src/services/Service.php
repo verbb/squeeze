@@ -28,6 +28,7 @@ class Service extends Component
     private const TOKEN_PURPOSE = 'download';
     private const TOKEN_VERSION = 1;
     private const FALLBACK_MAX_FILES = 1_000;
+    private const ASSET_ACCESS_DENIED_MESSAGE = 'One or more of the requested assets could not be downloaded.';
 
 
     // Public Methods
@@ -79,20 +80,12 @@ class Service extends Component
         foreach ($files as $fileId) {
             $asset = $assetsById[$fileId] ?? null;
 
-            // Skip unknown/disabled IDs rather than revealing whether they exist.
-            if (!$asset) {
-                continue;
-            }
-
-            if (!$this->canDownloadAsset($asset, $tokenAuthorized)) {
-                throw new ForbiddenHttpException('You are not permitted to download one or more of the requested assets.');
+            // Missing, query-excluded and unauthorized assets share one caller-visible denial.
+            if (!$asset || !$this->canDownloadAsset($asset, $tokenAuthorized)) {
+                throw new ForbiddenHttpException(self::ASSET_ACCESS_DENIED_MESSAGE);
             }
 
             $authorizedAssets[] = $asset;
-        }
-
-        if (!$authorizedAssets) {
-            throw new ForbiddenHttpException('No downloadable assets found.');
         }
 
         if ($settings->maxFiles !== null && count($authorizedAssets) > $settings->maxFiles) {

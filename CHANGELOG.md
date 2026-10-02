@@ -4,6 +4,7 @@
 
 ### Fixed
 - Fixed a moderate-severity resource consumption vulnerability.
+- Fixed a low-severity information disclosure vulnerability.
 
 ## 3.1.4 - 2026-10-02
 

@@ -130,6 +130,17 @@ namespace {
         echo $label . ": PASS\n";
     }
 
+    function captureArchiveDenial(callable $callback): array
+    {
+        try {
+            $callback();
+        } catch (ForbiddenHttpException $e) {
+            return [$e->statusCode, $e->getMessage()];
+        }
+
+        throw new RuntimeException('Expected archive access to be denied.');
+    }
+
     function zipContents(string $path): array
     {
         $zip = new ZipArchive();
@@ -303,16 +314,40 @@ namespace {
         ]);
         unlink($authenticatedArchive);
         rmdir(dirname($authenticatedArchive));
-        $GLOBALS['archiveUserId'] = null;
+
+        $expectedAssetDenial = [403, 'One or more of the requested assets could not be downloaded.'];
+
+        $GLOBALS['archiveAssets'] = [];
+        $missingDenial = captureArchiveDenial(static fn(): string => (new Service())->archive('missing', [601]));
+
+        $GLOBALS['archiveAssets'] = [new Asset(601, 'hidden.txt', 'hidden-marker')];
+        $unauthorizedDenial = captureArchiveDenial(static fn(): string => (new Service())->archive('unauthorized', [601]));
+
+        $GLOBALS['archiveAssets'] = [new Asset(601, 'visible.txt', 'visible-marker', false, true)];
+        $mixedMissingDenial = captureArchiveDenial(static fn(): string => (new Service())->archive('mixed-missing', [601, 602]));
+
+        $GLOBALS['archiveAssets'] = [
+            new Asset(601, 'visible.txt', 'visible-marker', false, true),
+            new Asset(602, 'hidden.txt', 'hidden-marker'),
+        ];
+        $mixedUnauthorizedDenial = captureArchiveDenial(static fn(): string => (new Service())->archive('mixed-unauthorized', [601, 602]));
+
+        $tokenSubsetArchive = (new Service())->archive('token-subset', [601], [601, 602]);
+        check('A valid strict token subset remains downloadable', zipContents($tokenSubsetArchive) === [
+            'visible.txt' => 'visible-marker',
+        ]);
+        unlink($tokenSubsetArchive);
+        rmdir(dirname($tokenSubsetArchive));
 
         $GLOBALS['archiveAssets'] = [new Asset(305, 'blocked.txt', 'blocked-marker', false, false, 'blocked')];
+        $blockedVolumeDenial = captureArchiveDenial(static fn(): string => (new Service())->archive('blocked-volume', [305], [305]));
 
-        try {
-            (new Service())->archive('blocked-volume', [305], [305]);
-            throw new RuntimeException('Expected volume authorization to fail.');
-        } catch (ForbiddenHttpException) {
-            check('A valid asset token cannot bypass the allowed-volume boundary', true);
-        }
+        check('Missing assets use the neutral access denial', $missingDenial === $expectedAssetDenial);
+        check('Unauthorized assets use the neutral access denial', $unauthorizedDenial === $expectedAssetDenial);
+        check('Mixed valid and missing assets fail with the neutral access denial', $mixedMissingDenial === $expectedAssetDenial);
+        check('Mixed valid and unauthorized assets fail with the neutral access denial', $mixedUnauthorizedDenial === $expectedAssetDenial);
+        check('Blocked-volume assets use the neutral access denial', $blockedVolumeDenial === $expectedAssetDenial);
+        $GLOBALS['archiveUserId'] = null;
 
         $GLOBALS['archiveAssets'] = [
             new Asset(401, 'Report.pdf', 'first-report-marker'),
@@ -361,13 +396,6 @@ namespace {
 
         check('The configured archive limit is applied after the bounded asset query', $GLOBALS['archiveAssetFindCalls'] === 1);
 
-        $singleArchive = (new Service())->archive('known-and-missing', [501, 999]);
-        check('Unknown IDs do not consume the configured archive member limit', zipContents($singleArchive) === [
-            'one.txt' => 'one',
-        ]);
-        unlink($singleArchive);
-        rmdir(dirname($singleArchive));
-
         $duplicateArchive = (new Service())->archive('deduplicated', [501, '501'], range(1, 1000));
         check('Equivalent asset IDs are deduplicated while a larger token authorization set permits a subset', zipContents($duplicateArchive) === [
             'one.txt' => 'one',
@@ -397,15 +425,10 @@ namespace {
 
         $settings->maxFiles = null;
         $GLOBALS['archiveAssetFindCalls'] = 0;
-        $fallbackArchive = (new Service())->archive('fallback-boundary', range(1, 1000), range(1, 1000));
+        $fallbackBoundaryDenial = captureArchiveDenial(static fn(): string => (new Service())->archive('fallback-boundary', range(1, 1000), range(1, 1000)));
 
-        check('The 1,000-file fallback boundary remains available', zipContents($fallbackArchive) === [
-            'one.txt' => 'one',
-            'two.txt' => 'two',
-        ]);
+        check('The 1,000-file fallback boundary reaches asset access checks', $fallbackBoundaryDenial === $expectedAssetDenial);
         check('The fallback boundary reaches the bounded asset query', $GLOBALS['archiveAssetFindCalls'] === 1);
-        unlink($fallbackArchive);
-        rmdir(dirname($fallbackArchive));
 
         $GLOBALS['archiveAssetFindCalls'] = 0;
 
