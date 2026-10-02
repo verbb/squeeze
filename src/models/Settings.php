@@ -22,7 +22,7 @@ class Settings extends Model
     public ?int $defaultTokenDuration = 3600;
 
     /**
-     * Maximum number of assets in one archive. Null disables the limit.
+     * Maximum number of assets in one archive. Null uses the 1,000-file safety limit.
      */
     public ?int $maxFiles = 100;
 

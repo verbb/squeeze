@@ -30,6 +30,8 @@ namespace craft\elements {
 
         public static function find(): object
         {
+            $GLOBALS['archiveAssetFindCalls'] = ($GLOBALS['archiveAssetFindCalls'] ?? 0) + 1;
+
             return new class {
                 private array $ids = [];
 
@@ -84,6 +86,8 @@ namespace craft\elements {
 
         public function canView(mixed $user): bool
         {
+            $GLOBALS['archiveAssetCanViewCalls'] = ($GLOBALS['archiveAssetCanViewCalls'] ?? 0) + 1;
+
             return $this->visible && $user !== null;
         }
     }
@@ -326,22 +330,96 @@ namespace {
         rmdir(dirname($duplicateArchive));
 
         $GLOBALS['archiveAssets'] = [
-            new Asset(501, 'one.txt', 'one'),
-            new Asset(502, 'two.txt', 'two'),
+            new Asset(501, 'one.txt', 'one', false, true),
+            new Asset(502, 'two.txt', 'two', false, true),
         ];
         $settings->maxFiles = 1;
         $directoriesBeforeLimit = glob($tempPath . '/squeeze-*', GLOB_ONLYDIR) ?: [];
+        $GLOBALS['archiveAssetFindCalls'] = 0;
+        $GLOBALS['archiveAssetCanViewCalls'] = 0;
+        $GLOBALS['archiveUserId'] = 77;
 
         try {
-            (new Service())->archive('too-many', [501, 502], [501, 502]);
-            throw new RuntimeException('Expected the file-count limit.');
+            (new Service())->archive('request-flood', range(1, 1001));
+            throw new RuntimeException('Expected the request file-count safety limit.');
         } catch (HttpException $e) {
-            check('The configured file-count limit rejects oversized requests', $e->statusCode === 413);
+            check('The request file-count safety limit rejects oversized requests', $e->statusCode === 413);
         }
 
+        check('An oversized request is rejected before querying assets', $GLOBALS['archiveAssetFindCalls'] === 0);
+        check('An oversized request is rejected before asset authorization', $GLOBALS['archiveAssetCanViewCalls'] === 0);
         check('A file-count rejection leaves no partial temp directory behind', (glob($tempPath . '/squeeze-*', GLOB_ONLYDIR) ?: []) === $directoriesBeforeLimit);
 
+        $GLOBALS['archiveAssetFindCalls'] = 0;
+
+        try {
+            (new Service())->archive('too-many-members', [501, 502], [501, 502]);
+            throw new RuntimeException('Expected the configured archive file-count limit.');
+        } catch (HttpException $e) {
+            check('The configured file-count limit still rejects oversized archives', $e->statusCode === 413);
+        }
+
+        check('The configured archive limit is applied after the bounded asset query', $GLOBALS['archiveAssetFindCalls'] === 1);
+
+        $singleArchive = (new Service())->archive('known-and-missing', [501, 999]);
+        check('Unknown IDs do not consume the configured archive member limit', zipContents($singleArchive) === [
+            'one.txt' => 'one',
+        ]);
+        unlink($singleArchive);
+        rmdir(dirname($singleArchive));
+
+        $duplicateArchive = (new Service())->archive('deduplicated', [501, '501'], range(1, 1000));
+        check('Equivalent asset IDs are deduplicated while a larger token authorization set permits a subset', zipContents($duplicateArchive) === [
+            'one.txt' => 'one',
+        ]);
+        unlink($duplicateArchive);
+        rmdir(dirname($duplicateArchive));
+
+        $GLOBALS['archiveAssetFindCalls'] = 0;
+
+        try {
+            (new Service())->archive('duplicate-flood', array_fill(0, 1001, 501), [501]);
+            throw new RuntimeException('Expected the raw file-count safety limit.');
+        } catch (HttpException $e) {
+            check('A duplicate-heavy request is rejected by the safety limit', $e->statusCode === 413);
+        }
+
+        check('A duplicate-heavy request is rejected before querying assets', $GLOBALS['archiveAssetFindCalls'] === 0);
+
+        try {
+            (new Service())->archive('token-list-flood', [501], range(1, 1001));
+            throw new RuntimeException('Expected the token file-count safety limit.');
+        } catch (HttpException $e) {
+            check('An oversized token authorization list is rejected by the safety limit', $e->statusCode === 413);
+        }
+
+        check('An oversized token authorization list is rejected before querying assets', $GLOBALS['archiveAssetFindCalls'] === 0);
+
+        $settings->maxFiles = null;
+        $GLOBALS['archiveAssetFindCalls'] = 0;
+        $fallbackArchive = (new Service())->archive('fallback-boundary', range(1, 1000), range(1, 1000));
+
+        check('The 1,000-file fallback boundary remains available', zipContents($fallbackArchive) === [
+            'one.txt' => 'one',
+            'two.txt' => 'two',
+        ]);
+        check('The fallback boundary reaches the bounded asset query', $GLOBALS['archiveAssetFindCalls'] === 1);
+        unlink($fallbackArchive);
+        rmdir(dirname($fallbackArchive));
+
+        $GLOBALS['archiveAssetFindCalls'] = 0;
+
+        try {
+            (new Service())->archive('fallback-limit', range(1, 1001), range(1, 1001));
+            throw new RuntimeException('Expected the fallback file-count limit.');
+        } catch (HttpException $e) {
+            check('The fallback file-count limit rejects more than 1,000 assets', $e->statusCode === 413);
+        }
+
+        check('The fallback file-count limit is enforced before querying assets', $GLOBALS['archiveAssetFindCalls'] === 0);
+
         $settings->maxFiles = 100;
+        $GLOBALS['archiveUserId'] = null;
         $settings->maxArchiveSize = 5;
         $GLOBALS['archiveAssets'] = [new Asset(503, 'large.txt', '123456')];
 

@@ -27,6 +27,7 @@ class Service extends Component
     private const TOKEN_CONTEXT = 'verbb/squeeze:download-token:v1';
     private const TOKEN_PURPOSE = 'download';
     private const TOKEN_VERSION = 1;
+    private const FALLBACK_MAX_FILES = 1_000;
 
 
     // Public Methods
@@ -40,14 +41,24 @@ class Service extends Component
     public function archive(string $filename, array $files, ?array $tokenFileIds = null): string
     {
         $filename = FileHelper::sanitizeFilename($filename) ?: 'archive';
-        $files = array_values(array_filter(array_map('intval', $files)));
+
+        /* @var Settings $settings */
+        $settings = Squeeze::$plugin->getSettings();
+        $requestFileLimit = $this->_getRequestFileLimit($settings);
+
+        // Bound every request-controlled list before normalization or intersection work begins.
+        if (count($files) > $requestFileLimit || ($tokenFileIds !== null && count($tokenFileIds) > $requestFileLimit)) {
+            throw new HttpException(413, 'The requested archive contains too many files.');
+        }
+
+        $files = $this->normalizeFileIds($files);
 
         if (!$files) {
             throw new ForbiddenHttpException('No assets specified.');
         }
 
         if ($tokenFileIds !== null) {
-            $tokenFileIds = array_values(array_filter(array_map('intval', $tokenFileIds)));
+            $tokenFileIds = $this->normalizeFileIds($tokenFileIds);
             $files = array_values(array_intersect($files, $tokenFileIds));
 
             if (!$files) {
@@ -56,7 +67,7 @@ class Service extends Component
         }
 
         $tokenAuthorized = $tokenFileIds !== null;
-        $assets = Asset::find()->id($files)->limit(null)->all();
+        $assets = Asset::find()->id($files)->limit($requestFileLimit)->all();
         $assetsById = [];
 
         foreach ($assets as $asset) {
@@ -83,9 +94,6 @@ class Service extends Component
         if (!$authorizedAssets) {
             throw new ForbiddenHttpException('No downloadable assets found.');
         }
-
-        /* @var Settings $settings */
-        $settings = Squeeze::$plugin->getSettings();
 
         if ($settings->maxFiles !== null && count($authorizedAssets) > $settings->maxFiles) {
             throw new HttpException(413, 'The requested archive contains too many files.');
@@ -213,6 +221,10 @@ class Service extends Component
         /* @var Settings $settings */
         $settings = Squeeze::$plugin->getSettings();
 
+        if (count($files) > $this->_getRequestFileLimit($settings)) {
+            throw new InvalidArgumentException('Too many assets were provided for one download token.');
+        }
+
         $files = $this->normalizeFileIds($files);
         $archiveName = FileHelper::sanitizeFilename($archiveName) ?: 'archive';
 
@@ -267,6 +279,13 @@ class Service extends Component
             return null;
         }
 
+        /* @var Settings $settings */
+        $settings = Squeeze::$plugin->getSettings();
+
+        if (count($payload['files']) > $this->_getRequestFileLimit($settings)) {
+            return null;
+        }
+
         foreach ($payload['files'] as $fileId) {
             if (!is_int($fileId) || $fileId <= 0) {
                 return null;
@@ -304,6 +323,11 @@ class Service extends Component
 
     // Private Methods
     // =========================================================================
+
+    private function _getRequestFileLimit(Settings $settings): int
+    {
+        return max($settings->maxFiles ?? 0, self::FALLBACK_MAX_FILES);
+    }
 
     private function _getTokenKey(): string
     {

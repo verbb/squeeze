@@ -124,6 +124,23 @@ namespace {
         'expires' => time() + 300,
         'userId' => null,
     ];
+
+    $boundaryToken = $service->createToken(range(1, 1000), 'boundary');
+    $boundaryPayload = $service->validateToken($boundaryToken);
+    check('A token at the 1,000-file request boundary remains valid', $boundaryPayload !== null && count($boundaryPayload['files']) === 1000);
+
+    try {
+        $service->createToken(range(1, 1001), 'too-many');
+        throw new RuntimeException('Expected oversized token creation to fail.');
+    } catch (InvalidArgumentException) {
+        check('Token creation rejects more than 1,000 asset IDs', true);
+    }
+
+    $oversizedClaims = $validClaims;
+    $oversizedClaims['files'] = range(1, 1001);
+    $oversizedToken = $security->hashData(Json::encode($oversizedClaims), $tokenKey);
+    check('Token validation rejects more than 1,000 asset IDs', $service->validateToken($oversizedToken) === null);
+
     $generalKeyToken = $security->hashData(Json::encode($validClaims), $securityKey);
 
     check('A general Craft signature cannot authorize a Squeeze download', $service->validateToken($generalKeyToken) === null);

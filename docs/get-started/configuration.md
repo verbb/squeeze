@@ -35,7 +35,7 @@ The lifetime of signed download tokens in seconds. The default is one hour. Set 
 
 **Type:** `int|null` · **Default:** `100`
 
-The maximum number of assets Squeeze will include in one archive. Set it to `null` to allow any number of assets.
+The maximum number of assets Squeeze will include in one archive. Set it to `null` to use the 1,000-file safety limit.
 :::
 
 ::: reference
