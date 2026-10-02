@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 3.1.4 - 2026-10-02
 
 ### Added
 - Added optional signed-in user binding for generated download tokens.
