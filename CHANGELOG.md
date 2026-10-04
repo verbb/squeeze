@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 3.1.5 - 2026-10-05
 
 ### Fixed
 - Fixed a moderate-severity resource consumption vulnerability.
