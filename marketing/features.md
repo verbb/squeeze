@@ -5,7 +5,7 @@ Squeeze packages one or more Craft assets into a downloadable ZIP when a visitor
 <!-- feature-section -->
 ## On-demand ZIP downloads
 
-Pass selected Craft assets to Squeeze and generate an archive on demand. It works for a single file or a collection, making it suitable for resource packs, media kits, document bundles, and user-selected downloads.
+Pass selected Craft assets to Squeeze and generate an archive on demand. It works for a single file or a collection, making it suitable for resource packs, media kits, document bundles, and visitor-selected downloads.
 
 <!-- feature-section-end -->
 

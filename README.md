@@ -3,7 +3,7 @@
 
 Squeeze is a Craft CMS plugin that packages one or more Craft assets into a downloadable ZIP when a visitor asks for them. Build secure download experiences from the files already in Craft without preparing every archive in advance.
 
-Pass selected Craft assets to Squeeze and generate an archive on demand. It works for a single file or a collection, making it suitable for resource packs, media kits, document bundles, and user-selected downloads.
+Pass selected Craft assets to Squeeze and generate an archive on demand. It works for a single file or a collection, making it suitable for resource packs, media kits, document bundles, and visitor-selected downloads.
 
 ## Features
 
@@ -18,16 +18,20 @@ Pass selected Craft assets to Squeeze and generate an archive on demand. It work
 - Choose the files and present the download from project templates.
 
 ## Documentation
+
 Visit the [Squeeze Plugin page](https://verbb.io/craft-plugins/squeeze) for all documentation, guides, pricing and developer resources.
 
 ## Credit & Thanks
+
 Originally created by [Olivier Bon](https://github.com/olivierbon) and [Bob Olde Hampsink](https://github.com/boboldehampsink).
 
 ## Support
-Get in touch with us via the [Squeeze Support page](https://verbb.io/craft-plugins/squeeze/support) or by [creating a Github issue](https://github.com/verbb/squeeze/issues)
+
+Get in touch with us via the [Squeeze Support page](https://verbb.io/craft-plugins/squeeze/support) or by [creating a GitHub issue](https://github.com/verbb/squeeze/issues).
 
 ## Sponsor
-Squeeze is licensed under the MIT license, meaning it will always be free and open source - we love free stuff! If you'd like to show your support to the plugin regardless, [Sponsor](https://github.com/sponsors/verbb) development.
+
+Squeeze is licensed under the MIT license, so it will always be free and open source. If you'd like to support it anyway, you can [sponsor its development](https://github.com/sponsors/verbb).
 
 <h2></h2>
 
