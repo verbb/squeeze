@@ -1,8 +1,8 @@
 # Configuration
 
-You can customise Squeeze’s settings using a PHP configuration file. This is optional: each setting has a default, so only include the values you want to change.
+You can customise Squeeze’s settings using a PHP configuration file. This is optional: each setting has a default, so you only need to include the values you want to change.
 
-Create `squeeze.php` in your Craft project's `/config` directory. For example, this restricts downloads to a volume whose handle is `downloads`:
+To override a setting, create `squeeze.php` in your Craft project’s `/config` directory and return an array of setting names and values. For example, the following will restrict downloads to a volume whose handle is `downloads`:
 
 ```php
 <?php
@@ -12,6 +12,8 @@ return [
 ];
 ```
 
+All other settings keep their defaults. Add any further settings you want to change to the same array. The options below explain the available settings and their defaults. You can also manage these settings in the control panel under **Settings → Squeeze**.
+
 ## Configuration Options
 
 ::: reference
@@ -19,7 +21,7 @@ return [
 
 **Type:** `string|array` · **Default:** `'*'`
 
-The volumes permitted for downloads, identified by UID, handle or ID. An asterisk or an empty array permits all volumes, subject to token and permission checks. The opening example assumes a volume with the handle `downloads` exists.
+The volumes permitted for downloads, identified by UID, handle or ID. An asterisk or an empty array permits all volumes, subject to token and permission checks. The opening example assumes a volume with the handle `downloads` exists. Anonymous downloads still require a signed token, so allowing a volume doesn’t give anonymous visitors access through raw asset IDs.
 :::
 
 ::: reference
@@ -45,7 +47,3 @@ The maximum number of assets Squeeze will include in one archive. Set it to `nul
 
 The maximum combined uncompressed size of the assets in one archive, in bytes. The default is 1 GiB. Set it to `null` to disable the size limit.
 :::
-
-## Control Panel
-
-You can also manage these settings from **Settings → Plugins → Squeeze**. Anonymous downloads require a signed token; allowing a volume does not give anonymous visitors access through raw asset IDs.
